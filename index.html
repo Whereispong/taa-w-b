@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>TAA W&B REV 224 COMPLETE</title>
+    <style>
+        :root { --airasia-red: #e11b22; --bg: #f4f7f6; }
+        body { font-family: -apple-system, sans-serif; margin: 0; background: var(--bg); padding-bottom: 30px; }
+        .header { background: var(--airasia-red); color: white; padding: 15px; text-align: center; font-weight: bold; position: sticky; top: 0; z-index: 100; }
+        .container { padding: 12px; max-width: 500px; margin: auto; }
+        .card { background: white; padding: 15px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 15px; }
+        label { display: block; font-size: 0.75rem; font-weight: bold; margin-bottom: 5px; color: #666; text-transform: uppercase; }
+        select, input { width: 100%; padding: 12px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; box-sizing: border-box; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .res-box { padding: 12px; border-radius: 8px; background: #fff; border: 1px solid #eee; border-left: 6px solid #ccc; margin-bottom: 10px; }
+        .res-label { font-size: 0.7rem; color: #888; display: block; font-weight: bold; }
+        .res-val { font-size: 1.3rem; font-weight: bold; display: block; margin: 4px 0; }
+        .ok { border-left-color: #28a745; }
+        .over { border-left-color: #dc3545; background: #fff5f5; color: #dc3545; }
+    </style>
+</head>
+<body>
+
+<div class="header">TAA W&B SUMMARY REV 224</div>
+
+<div class="container">
+    <div class="card">
+        <label>Aircraft Registration</label>
+        <select id="reg" onchange="updateCrewOptions()"><option value="">-- Select --</option></select>
+        <label>Crew Configuration</label>
+        <select id="crew" onchange="calculate()"><option value="">-- Select --</option></select>
+    </div>
+
+    <div class="card">
+        <label>Pilot Adjustment (Total KG)</label>
+        <input type="number" id="pilotWeight" placeholder="0" oninput="calculate()">
+        <div class="grid">
+            <div><label>Pax (84kg)</label><input type="number" id="pax" value="0" oninput="calculate()"></div>
+            <div><label>Cargo (KG)</label><input type="number" id="cargo" value="0" oninput="calculate()"></div>
+        </div>
+        <div class="grid">
+            <div><label>T/O Fuel</label><input type="number" id="fuel" value="0" oninput="calculate()"></div>
+            <div><label>Trip Fuel</label><input type="number" id="tripFuel" value="0" oninput="calculate()"></div>
+        </div>
+    </div>
+
+    <div id="results">
+        <div class="res-box" id="box-zfw"><span class="res-label">ZERO FUEL WEIGHT</span><span class="res-val" id="zfw">0 KG</span><span id="lim-zfw"></span></div>
+        <div class="res-box" id="box-tow"><span class="res-label">TAKEOFF WEIGHT</span><span class="res-val" id="tow">0 KG</span><span id="lim-tow"></span></div>
+        <div class="res-box" id="box-lw"><span class="res-label">LANDING WEIGHT</span><span class="res-val" id="lw">0 KG</span><span id="lim-lw"></span></div>
+    </div>
+</div>
+
+<script>
+const fleetData = {
+    // A321 NEO (3/5 vs 2/5)
+    "HS-EAA": { mtow: 93500, mlw: 79200, mzfw: 75600, weights: {"3/5": 50980, "2/5": 50895} },
+    "HS-EAB": { mtow: 93500, mlw: 79200, mzfw: 75600, weights: {"3/5": 50984, "2/5": 50899} },
+    "HS-EAC": { mtow: 93500, mlw: 79200, mzfw: 75600, weights: {"3/5": 50960, "2/5": 50875} },
+    "HS-EAD": { mtow: 93500, mlw: 79200, mzfw: 75600, weights: {"3/5": 50946, "2/5": 50861} },
+    "HS-EAE": { mtow: 93500, mlw: 79200, mzfw: 75600, weights: {"3/5": 50660, "2/5": 50575} },
+    "HS-EAF": { mtow: 93500, mlw: 79200, mzfw: 75600, weights: {"3/5": 51010, "2/5": 50925} },
+    "HS-EAG": { mtow: 93500, mlw: 79200, mzfw: 75600, weights: {"3/5": 50985, "2/5": 50900} },
+
+    // A320 NEO (3/4 vs 2/4)
+    "HS-BBX": { mtow: 75500, mlw: 67400, mzfw: 64300, weights: {"3/4": 44886, "2/4": 44801} },
+    "HS-BBY": { mtow: 75500, mlw: 67400, mzfw: 64300, weights: {"3/4": 44912, "2/4": 44827} },
+    "HS-BBZ": { mtow: 75500, mlw: 67400, mzfw: 64300, weights: {"3/4": 44907, "2/4": 44822} },
+    "HS-CBB": { mtow: 75500, mlw: 67400, mzfw: 64300, weights: {"3/4": 44499, "2/4": 44414} },
+    "HS-CBC": { mtow: 75500, mlw: 67400, mzfw: 64300, weights: {"3/4": 44889, "2/4": 44804} },
+    "HS-CBE": { mtow: 75500, mlw: 67400, mzfw: 64300, weights: {"3/4": 44869, "2/4": 44784} },
+    "HS-CBF": { mtow: 75500, mlw: 67400, mzfw: 64300, weights: {"3/4": 44457, "2/4": 44372} },
+    "HS-CBG": { mtow: 75500, mlw: 67400, mzfw: 64300, weights: {"3/4": 44375, "2/4": 44290} },
+    "HS-CBH": { mtow: 75500, mlw: 67400, mzfw: 64300, weights: {"3/4": 44752, "2/4": 44667} },
+    "HS-CBJ": { mtow: 75500, mlw: 67400, mzfw: 64300, weights: {"3/4": 44529, "2/4": 44444} },
+    "HS-CBK": { mtow: 75500, mlw: 67400, mzfw: 64300, weights: {"3/4": 44228, "2/4": 44143} },
+
+    // A320 CEO (3/4 vs 2/4)
+    "HS-ABA": { mtow: 73500, mlw: 66000, mzfw: 62500, weights: {"3/4": 42620, "2/4": 42535} },
+    "HS-ABC": { mtow: 73500, mlw: 66000, mzfw: 62500, weights: {"3/4": 42633, "2/4": 42548} },
+    "HS-ABD": { mtow: 73500, mlw: 66000, mzfw: 62500, weights: {"3/4": 42375, "2/4": 42290} },
+    "HS-ABJ": { mtow: 75500, mlw: 66000, mzfw: 62500, weights: {"3/4": 42561, "2/4": 42476} },
+    "HS-ABM": { mtow: 75500, mlw: 66000, mzfw: 62500, weights: {"3/4": 42625, "2/4": 42540} },
+    "HS-ABN": { mtow: 75500, mlw: 66000, mzfw: 62500, weights: {"3/4": 42515, "2/4": 42430} },
+    "HS-ABO": { mtow: 75500, mlw: 66000, mzfw: 62500, weights: {"3/4": 42692, "2/4": 42607} },
+    "HS-ABP": { mtow: 75500, mlw: 66000, mzfw: 62500, weights: {"3/4": 42468, "2/4": 42383} },
+    "HS-ABQ": { mtow: 75500, mlw: 66000, mzfw: 62500, weights: {"3/4": 42627, "2/4": 42542} },
+    "HS-ABR": { mtow: 75500, mlw: 66000, mzfw: 62500, weights: {"3/4": 42131, "2/4": 42046} },
+    "HS-ABS": { mtow: 75500, mlw: 66000, mzfw: 62500, weights: {"3/4": 42356, "2/4": 42271} },
+    "HS-ABT": { mtow: 75500, mlw: 66000, mzfw: 62500, weights: {"3/4": 42457, "2/4": 42372} },
+    "HS-ABU": { mtow: 75500, mlw: 66000, mzfw: 62500, weights: {"3/4": 42441, "2/4": 42356} },
+    "HS-ABV": { mtow: 75500, mlw: 66000, mzfw: 62500, weights: {"3/4": 42536, "2/4": 42451} },
+    "HS-ABW": { mtow: 75500, mlw: 66000, mzfw: 62500, weights: {"3/4": 42762, "2/4": 42677} },
+    "HS-ABX": { mtow: 75500, mlw: 66000, mzfw: 62500, weights: {"3/4": 43199, "2/4": 43114} },
+    "HS-ABY": { mtow: 75500, mlw: 66000, mzfw: 62500, weights: {"3/4": 43317, "2/4": 43232} },
+    "HS-ABZ": { mtow: 75500, mlw: 66000, mzfw: 62500, weights: {"3/4": 42905, "2/4": 42820} },
+    "HS-BBA": { mtow: 75500, mlw: 66000, mzfw: 62500, weights: {"3/4": 42706, "2/4": 42621} },
+    "HS-BBB": { mtow: 75500, mlw: 66000, mzfw: 62500, weights: {"3/4": 42615, "2/4": 42530} },
+    "HS-BBC": { mtow: 75500, mlw: 66000, mzfw: 62500, weights: {"3/4": 42959, "2/4": 42874} },
+    "HS-BBD": { mtow: 75500, mlw: 66000, mzfw: 62500, weights: {"3/4": 42877, "2/4": 42792} },
+    "HS-BBE": { mtow: 75500, mlw: 66000, mzfw: 62500, weights: {"3/4": 42667, "2/4": 42582} },
+    "HS-BBF": { mtow: 75500, mlw: 66000, mzfw: 62500, weights: {"3/4": 42849, "2/4": 42764} },
+    "HS-BBG": { mtow: 75500, mlw: 66000, mzfw: 62500, weights: {"3/4": 42814, "2/4": 42729} },
+    "HS-BBH": { mtow: 75500, mlw: 66000, mzfw: 62500, weights: {"3/4": 42844, "2/4": 42759} },
+    "HS-BBI": { mtow: 75500, mlw: 66000, mzfw: 62500, weights: {"3/4": 42677, "2/4": 42592} },
+    "HS-BBJ": { mtow: 75500, mlw: 66000, mzfw: 62500, weights: {"3/4": 42684, "2/4": 42599} },
+    "HS-BBL": { mtow: 75500, mlw: 66000, mzfw: 62500, weights: {"3/4": 43000, "2/4": 42915} },
+    "HS-BBM": { mtow: 75500, mlw: 66000, mzfw: 62500, weights: {"3/4": 42634, "2/4": 42549} },
+    "HS-BBO": { mtow: 75500, mlw: 66000, mzfw: 62500, weights: {"3/4": 42384, "2/4": 42299} },
+    "HS-BBP": { mtow: 75500, mlw: 66000, mzfw: 62500, weights: {"3/4": 42500, "2/4": 42415} },
+    "HS-BBQ": { mtow: 75500, mlw: 66000, mzfw: 62500, weights: {"3/4": 42765, "2/4": 42680} },
+    "HS-BBR": { mtow: 75500, mlw: 66000, mzfw: 62500, weights: {"3/4": 42174, "2/4": 42089} },
+    "HS-BBT": { mtow: 75500, mlw: 66000, mzfw: 62500, weights: {"3/4": 42825, "2/4": 42740} },
+    "HS-BBU": { mtow: 75500, mlw: 66000, mzfw: 62500, weights: {"3/4": 42586, "2/4": 42501} },
+    "HS-BBV": { mtow: 75500, mlw: 66000, mzfw: 62500, weights: {"3/4": 42634, "2/4": 42549} },
+    "HS-BBW": { mtow: 75500, mlw: 66000, mzfw: 62500, weights: {"3/4": 42472, "2/4": 42387} },
+    "HS-CBA": { mtow: 75500, mlw: 66000, mzfw: 62500, weights: {"3/4": 42367, "2/4": 42282} },
+    "HS-CBD": { mtow: 75500, mlw: 66000, mzfw: 62500, weights: {"3/4": 42730, "2/4": 42645} },
+    "HS-CBI": { mtow: 75500, mlw: 66000, mzfw: 62500, weights: {"3/4": 42860, "2/4": 42775} },
+    "HS-CBL": { mtow: 77000, mlw: 64500, mzfw: 61000, weights: {"3/4": 42767, "2/4": 42682} },
+    "HS-CBM": { mtow: 75500, mlw: 66000, mzfw: 62500, weights: {"3/4": 42127, "2/4": 42042} },
+    "HS-CBR": { mtow: 75500, mlw: 66000, mzfw: 62500, weights: {"3/4": 42656, "2/4": 42571} }
+};
+
+const regSelect = document.getElementById('reg');
+const crewSelect = document.getElementById('crew');
+
+Object.keys(fleetData).sort().forEach(r => {
+    let o = document.createElement('option'); o.value = r; o.innerText = r; regSelect.appendChild(o);
+});
+
+function updateCrewOptions() {
+    const r = regSelect.value;
+    crewSelect.innerHTML = '<option value="">-- Select --</option>';
+    if(!r) return;
+    Object.keys(fleetData[r].weights).forEach(c => {
+        let o = document.createElement('option'); o.value = c; o.innerText = "Crew " + c; crewSelect.appendChild(o);
+    });
+}
+
+function calculate() {
+    const r = regSelect.value;
+    const c = crewSelect.value;
+    if(!r || !c) return;
+
+    const ac = fleetData[r];
+    const dow = ac.weights[c];
+    const pilotAdj = parseFloat(document.getElementById('pilotWeight').value) || 0;
+    const paxWeight = (parseFloat(document.getElementById('pax').value) || 0) * 84;
+    const cargo = parseFloat(document.getElementById('cargo').value) || 0;
+    const fuel = parseFloat(document.getElementById('fuel').value) || 0;
+    const trip = parseFloat(document.getElementById('tripFuel').value) || 0;
+
+    const zfw = dow + pilotAdj + paxWeight + cargo;
+    const tow = zfw + fuel;
+    const lw = tow - trip;
+
+    updateUI('zfw', zfw, ac.mzfw);
+    updateUI('tow', tow, ac.mtow);
+    updateUI('lw', lw, ac.mlw);
+}
+
+function updateUI(id, val, limit) {
+    const b = document.getElementById('box-' + id);
+    document.getElementById(id).innerText = Math.round(val).toLocaleString() + " KG";
+    document.getElementById('lim-' + id).innerText = "Limit: " + limit.toLocaleString() + " KG";
+    b.className = val > limit ? "res-box over" : "res-box ok";
+}
+</script>
+</body>
+</html>
