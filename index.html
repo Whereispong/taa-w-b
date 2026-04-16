@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TAA Weight & Balance Calculator</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background-color: #f4f4f4; }
+        .container { max-width: 600px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        h2 { color: #e11b22; text-align: center; }
+        .section { margin-bottom: 15px; }
+        label { display: block; font-weight: bold; margin-bottom: 5px; }
+        select, input { width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
+        .results { margin-top: 20px; padding: 15px; border-radius: 4px; background: #eee; }
+        .result-item { display: flex; justify-content: space-between; margin-bottom: 8px; padding: 5px 0; border-bottom: 1px solid #ddd; }
+        .limit-ok { color: green; font-weight: bold; }
+        .limit-over { color: red; font-weight: bold; }
+        .info-box { font-size: 0.85em; color: #666; margin-top: 5px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Thai AirAsia Fleet W&B</h2>
+    
+    <div class="section">
+        <label for="reg">Select Aircraft Registration</label>
+        <select id="reg" onchange="updateCrewOptions()">
+            <option value="">-- Select Aircraft --</option>
+        </select>
+    </div>
+
+    <div class="section">
+        <label for="crew">Crew Configuration (Cockpit/Cabin)</label>
+        <select id="crew" onchange="calculate()">
+            <option value="">-- Select Reg First --</option>
+        </select>
+    </div>
+
+    <hr>
+
+    <div class="section">
+        <label for="pax">Total Passengers (Adult/Child)</label>
+        <input type="number" id="pax" placeholder="Enter number of pax" oninput="calculate()">
+        <div class="info-box">Assumed Average: 84kg per pax (incl. carry-on)</div>
+    </div>
+
+    <div class="section">
+        <label for="cargo">Total Cargo / Bags (KG)</label>
+        <input type="number" id="cargo" placeholder="0" oninput="calculate()">
+    </div>
+
+    <div class="section">
+        <label for="fuel">Take-Off Fuel (KG)</label>
+        <input type="number" id="fuel" placeholder="0" oninput="calculate()">
+    </div>
+
+    <div class="section">
+        <label for="tripFuel">Trip Fuel (KG)</label>
+        <input type="number" id="tripFuel" placeholder="0" oninput="calculate()">
+    </div>
+
+    <div class="results" id="output">
+        <div class="result-item"><span>Zero Fuel Weight (ZFW):</span> <span id="zfw">-</span></div>
+        <div class="result-item"><span>Take-Off Weight (TOW):</span> <span id="tow">-</span></div>
+        <div class="result-item"><span>Landing Weight (LW):</span> <span id="lw">-</span></div>
+    </div>
+</div>
+
+<script>
+const fleetData = {
+  "HS-ABA": {"type": "A320", "mtow": 73500, "mlw": 66000, "mzfw": 62500, "weights": {"3/0": 42025, "3/4": 42535, "2/4": 42620}},
+  "HS-ABB": {"type": "A320", "mtow": 73500, "mlw": 66000, "mzfw": 62500, "weights": {"3/0": 41969, "3/4": 42519, "2/4": 42604}},
+  "HS-ABC": {"type": "A320", "mtow": 73500, "mlw": 66000, "mzfw": 62500, "weights": {"3/0": 42038, "3/4": 42548, "2/4": 42633}},
+  "HS-ABD": {"type": "A320", "mtow": 73500, "mlw": 66000, "mzfw": 62500, "weights": {"3/0": 41780, "3/4": 42290, "2/4": 42375}},
+  "HS-ABE": {"type": "A320", "mtow": 73500, "mlw": 66000, "mzfw": 62500, "weights": {"3/0": 42100, "3/4": 42650, "2/4": 42735}},
+  "HS-ABF": {"type": "A320", "mtow": 73500, "mlw": 66000, "mzfw": 62500, "weights": {"3/0": 41844, "3/4": 42394, "2/4": 42479}},
+  "HS-ABG": {"type": "A320", "mtow": 73500, "mlw": 66000, "mzfw": 62500, "weights": {"3/0": 41615, "3/4": 42165, "2/4": 42250}},
+  "HS-ABH": {"type": "A320", "mtow": 73500, "mlw": 66000, "mzfw": 62500, "weights": {"3/0": 42043, "3/4": 42593, "2/4": 42678}},
+  "HS-ABI": {"type": "A320", "mtow": 73500, "mlw": 66000, "mzfw": 62500, "weights": {"3/0": 41856, "3/4": 42406, "2/4": 42491}},
+  "HS-ABJ": {"type": "A320", "mtow": 73500, "mlw": 66000, "mzfw": 62500, "weights": {"3/0": 41966, "3/4": 42476, "2/4": 42561}},
+  "HS-ABK": {"type": "A320", "mtow": 73500, "mlw": 66000, "mzfw": 62500, "weights": {"3/0": 42095, "3/4": 42645, "2/4": 42730}},
+  "HS-ABL": {"type": "A320", "mtow": 73500, "mlw": 66000, "mzfw": 62500, "weights": {"3/0": 41962, "3/4": 42512, "2/4": 42597}},
+  "HS-ABM": {"type": "A320", "mtow": 73500, "mlw": 66000, "mzfw": 62500, "weights": {"3/0": 42030, "3/4": 42540, "2/4": 42625}},
+  "HS-ABN": {"type": "A320", "mtow": 73500, "mlw": 66000, "mzfw": 62500, "weights": {"3/0": 41920, "3/4": 42430, "2/4": 42515}},
+  "HS-ABO": {"type": "A320", "mtow": 73500, "mlw": 66000, "mzfw": 62500, "weights": {"3/0": 42097, "3/4": 42607, "2/4": 42692}},
+  "HS-ABP": {"type": "A320", "mtow": 73500, "mlw": 66000, "mzfw": 62500, "weights": {"3/0": 41873, "3/4": 42383, "2/4": 42468}},
+  "HS-ABQ": {"type": "A320", "mtow": 73500, "mlw": 66000, "mzfw": 62500, "weights": {"3/0": 42032, "3/4": 42542, "2/4": 42627}},
+  "HS-ABR": {"type": "A320", "mtow": 73500, "mlw": 66000, "mzfw": 62500, "weights": {"3/0": 41536, "3/4": 42046, "2/4": 42131}},
+  "HS-ABS": {"type": "A320", "mtow": 73500, "mlw": 66000, "mzfw": 62500, "weights": {"3/0": 41761, "3/4": 42271, "2/4": 42356}},
+  "HS-ABT": {"type": "A320", "mtow": 75500, "mlw": 66000, "mzfw": 62500, "weights": {"3/0": 41862, "3/4": 42372, "2/4": 42457}},
+  "HS-ABU": {"type": "A320", "mtow": 75500, "mlw": 66000, "mzfw": 62500, "weights": {"3/0": 41846, "3/4": 42356, "2/4": 42441}},
+  "HS-ABV": {"type": "A320", "mtow": 75500, "mlw": 66000, "mzfw": 62500, "weights": {"3/0": 41941, "3/4": 42451, "2/4": 42536}},
+  "HS-ABW": {"type": "A320", "mtow": 75500, "mlw": 66000, "mzfw": 62500, "weights": {"3/0": 42167, "3/4": 42677, "2/4": 42762}},
+  "HS-ABX": {"type": "A320", "mtow": 75500, "mlw": 66000, "mzfw": 62500, "weights": {"3/0": 42604, "3/4": 43114, "2/4": 43199}},
+  "HS-ABY": {"type": "A320", "mtow": 75500, "mlw": 66000, "mzfw": 62500, "weights": {"3/0": 42722, "3/4": 43232, "2/4": 43317}},
+  "HS-ABZ": {"type": "A320", "mtow": 75500, "mlw": 66000, "mzfw": 62500, "weights": {"3/0": 42310, "3/4": 42820, "2/4": 42905}},
+  "HS-BBA": {"type": "A320", "mtow": 75500, "mlw": 66000, "mzfw": 62500, "weights": {"3/0": 42111, "3/4": 42621, "2/4": 42706}},
+  "HS-BBB": {"type": "A320", "mtow": 75500, "mlw": 66000, "mzfw": 62500, "weights": {"3/0": 42020, "3/4": 42530, "2/4": 42615}},
+  "HS-BBC": {"type": "A320", "mtow": 75500, "mlw": 66000, "mzfw": 62500, "weights": {"3/0": 42364, "3/4": 42874, "2/4": 42959}},
+  "HS-BBD": {"type": "A320", "mtow": 75500, "mlw": 66000, "mzfw": 62500, "weights": {"3/0": 42282, "3/4": 42792, "2/4": 42877}},
+  "HS-BBE": {"type": "A320", "mtow": 75500, "mlw": 66000, "mzfw": 62500, "weights": {"3/0": 42072, "3/4": 42582, "2/4": 42667}},
+  "HS-BBF": {"type": "A320", "mtow": 75500, "mlw": 66000, "mzfw": 62500, "weights": {"3/0": 42254, "3/4": 42764, "2/4": 42849}},
+  "HS-BBG": {"type": "A320", "mtow": 75500, "mlw": 66000, "mzfw": 62500, "weights": {"3/0": 42219, "3/4": 42729, "2/4": 42814}},
+  "HS-BBH": {"type": "A320", "mtow": 75500, "mlw": 66000, "mzfw": 62500, "weights": {"3/0": 42249, "3/4": 42759, "2/4": 42844}},
+  "HS-BBI": {"type": "A320", "mtow": 75500, "mlw": 66000, "mzfw": 62500, "weights": {"3/0": 42082, "3/4": 42592, "2/4": 42677}},
+  "HS-BBJ": {"type": "A320", "mtow": 75500, "mlw": 66000, "mzfw": 62500, "weights": {"3/0": 42089, "3/4": 42599, "2/4": 42684}},
+  "HS-BBL": {"type": "A320", "mtow": 75500, "mlw": 66000, "mzfw": 62500, "weights": {"3/0": 42405, "3/4": 42915, "2/4": 43000}},
+  "HS-BBM": {"type": "A320", "mtow": 75500, "mlw": 66000, "mzfw": 62500, "weights": {"3/0": 42039, "3/4": 42549, "2/4": 42634}},
+  "HS-BBN": {"type": "A320", "mtow": 75500, "mlw": 66000, "mzfw": 62500, "weights": {"3/0": 42012, "3/4": 42562, "2/4": 42647}},
+  "HS-BBO": {"type": "A320", "mtow": 75500, "mlw": 66000, "mzfw": 62500, "weights": {"3/0": 41789, "3/4": 42299, "2/4": 42384}},
+  "HS-BBP": {"type": "A320", "mtow": 75500, "mlw": 66000, "mzfw": 62500, "weights": {"3/0": 41905, "3/4": 42415, "2/4": 42500}},
+  "HS-BBQ": {"type": "A320", "mtow": 75500, "mlw": 66000, "mzfw": 62500, "weights": {"3/0": 42170, "3/4": 42680, "2/4": 42765}},
+  "HS-BBR": {"type": "A320", "mtow": 75500, "mlw": 66000, "mzfw": 62500, "weights": {"3/0": 41579, "3/4": 42089, "2/4": 42174}},
+  "HS-BBS": {"type": "A320", "mtow": 73500, "mlw": 66000, "mzfw": 62500, "weights": {"3/0": 42095, "3/4": 42645, "2/4": 42730}},
+  "HS-BBT": {"type": "A320", "mtow": 75500, "mlw": 66000, "mzfw": 62500, "weights": {"3/0": 42230, "3/4": 42740, "2/4": 42825}},
+  "HS-BBU": {"type": "A320", "mtow": 75500, "mlw": 66000, "mzfw": 62500, "weights": {"3/0": 41991, "3/4": 42501, "2/4": 42586}},
+  "HS-BBV": {"type": "A320", "mtow": 75500, "mlw": 66000, "mzfw": 62500, "weights": {"3/0": 42039, "3/4": 42549, "2/4": 42634}},
+  "HS-BBW": {"type": "A320", "mtow": 75500, "mlw": 66000, "mzfw": 62500, "weights": {"3/0": 41877, "3/4": 42387, "2/4": 42472}},
+  "HS-BBX": {"type": "A320", "mtow": 75500, "mlw": 67400, "mzfw": 64300, "weights": {"3/0": 44155, "3/4": 44801, "2/4": 44886}},
+  "HS-BBY": {"type": "A320", "mtow": 75500, "mlw": 67400, "mzfw": 64300, "weights": {"3/0": 44096, "3/4": 44742, "2/4": 44827}},
+  "HS-BBZ": {"type": "A320", "mtow": 75500, "mlw": 67400, "mzfw": 64300, "weights": {"3/0": 44091, "3/4": 44737, "2/4": 44822}},
+  "HS-CBA": {"type": "A320", "mtow": 75500, "mlw": 66000, "mzfw": 62500, "weights": {"3/0": 41772, "3/4": 42282, "2/4": 42367}},
+  "HS-CBB": {"type": "A320", "mtow": 75500, "mlw": 67400, "mzfw": 64300, "weights": {"3/0": 43768, "3/4": 44414, "2/4": 44499}},
+  "HS-CBC": {"type": "A320", "mtow": 75500, "mlw": 67400, "mzfw": 64300, "weights": {"3/0": 44158, "3/4": 44804, "2/4": 44889}},
+  "HS-CBD": {"type": "A320", "mtow": 75500, "mlw": 66000, "mzfw": 62500, "weights": {"3/0": 42135, "3/4": 42645, "2/4": 42730}},
+  "HS-CBE": {"type": "A320", "mtow": 75500, "mlw": 67400, "mzfw": 64300, "weights": {"3/0": 44053, "3/4": 44699, "2/4": 44784}},
+  "HS-CBF": {"type": "A320", "mtow": 75500, "mlw": 67400, "mzfw": 64300, "weights": {"3/0": 43641, "3/4": 44287, "2/4": 44372}},
+  "HS-CBG": {"type": "A320", "mtow": 75500, "mlw": 67400, "mzfw": 64300, "weights": {"3/0": 43559, "3/4": 44205, "2/4": 44290}},
+  "HS-CBH": {"type": "A320", "mtow": 75500, "mlw": 67400, "mzfw": 64300, "weights": {"3/0": 43936, "3/4": 44582, "2/4": 44667}},
+  "HS-CBI": {"type": "A320", "mtow": 75500, "mlw": 66000, "mzfw": 62500, "weights": {"3/0": 42129, "3/4": 42775, "2/4": 42860}},
+  "HS-CBJ": {"type": "A320", "mtow": 75500, "mlw": 67400, "mzfw": 64300, "weights": {"3/0": 43713, "3/4": 44359, "2/4": 44444}},
+  "HS-CBK": {"type": "A320", "mtow": 75500, "mlw": 67400, "mzfw": 64300, "weights": {"3/0": 43497, "3/4": 44143, "2/4": 44228}},
+  "HS-CBL": {"type": "A320", "mtow": 77000, "mlw": 64500, "mzfw": 61000, "weights": {"3/0": 42172, "3/4": 42682, "2/4": 42767}},
+  "HS-CBM": {"type": "A320", "mtow": 75500, "mlw": 66000, "mzfw": 62500, "weights": {"3/0": 41532, "3/4": 42042, "2/4": 42127}},
+  "HS-CBR": {"type": "A320", "mtow": 75500, "mlw": 66000, "mzfw": 62500, "weights": {"3/0": 42061, "3/4": 42571, "2/4": 42656}},
+  "HS-EAA": {"type": "A321", "mtow": 93500, "mlw": 79200, "mzfw": 75600, "weights": {"2/5": 50530, "3/5": 50615, "2/6": 50605, "3/6": 50690}},
+  "HS-EAB": {"type": "A321", "mtow": 93500, "mlw": 79200, "mzfw": 75600, "weights": {"2/5": 50828, "3/5": 50913, "2/6": 50903, "3/6": 50988}},
+  "HS-EAC": {"type": "A321", "mtow": 93500, "mlw": 79200, "mzfw": 75600, "weights": {"2/5": 50824, "3/5": 50909, "2/6": 50899, "3/6": 50984}},
+  "HS-EAD": {"type": "A321", "mtow": 93500, "mlw": 79200, "mzfw": 75600, "weights": {"2/5": 50786, "3/5": 50871, "2/6": 50861, "3/6": 50946}},
+  "HS-EAE": {"type": "A321", "mtow": 93500, "mlw": 79200, "mzfw": 75600, "weights": {"2/5": 50500, "3/5": 50585, "2/6": 50575, "3/6": 50660}},
+  "HS-EAF": {"type": "A321", "mtow": 93500, "mlw": 79200, "mzfw": 75600, "weights": {"2/5": 50478, "3/5": 50563, "2/6": 50553, "3/6": 50638}},
+  "HS-EAG": {"type": "A321", "mtow": 93500, "mlw": 79200, "mzfw": 75600, "weights": {"2/5": 50490, "3/5": 50575, "2/6": 50565, "3/6": 50650}}
+};
+
+const regSelect = document.getElementById('reg');
+const crewSelect = document.getElementById('crew');
+
+// Initialize Registration List
+Object.keys(fleetData).sort().forEach(reg => {
+    let opt = document.createElement('option');
+    opt.value = reg;
+    opt.innerHTML = reg + " (" + fleetData[reg].type + ")";
+    regSelect.appendChild(opt);
+});
+
+function updateCrewOptions() {
+    const reg = regSelect.value;
+    crewSelect.innerHTML = '<option value="">-- Select Crew --</option>';
+    if(!reg) return;
+
+    const ac = fleetData[reg];
+    Object.keys(ac.weights).forEach(config => {
+        let opt = document.createElement('option');
+        opt.value = config;
+        opt.innerHTML = config;
+        crewSelect.appendChild(opt);
+    });
+    calculate();
+}
+
+function calculate() {
+    const reg = regSelect.value;
+    const crewConfig = crewSelect.value;
+    const paxCount = parseFloat(document.getElementById('pax').value) || 0;
+    const cargo = parseFloat(document.getElementById('cargo').value) || 0;
+    const fuel = parseFloat(document.getElementById('fuel').value) || 0;
+    const tripFuel = parseFloat(document.getElementById('tripFuel').value) || 0;
+
+    if (!reg || !crewConfig) {
+        resetOutput();
+        return;
+    }
+
+    const ac = fleetData[reg];
+    const dow = ac.weights[crewConfig];
+    const paxWeight = paxCount * 84; // 84kg standard average
+    
+    const zfw = dow + paxWeight + cargo;
+    const tow = zfw + fuel;
+    const lw = tow - tripFuel;
+
+    updateField('zfw', zfw, ac.mzfw);
+    updateField('tow', tow, ac.mtow);
+    updateField('lw', lw, ac.mlw);
+}
+
+function updateField(id, val, limit) {
+    const el = document.getElementById(id);
+    const status = val <= limit ? 'limit-ok' : 'limit-over';
+    el.innerHTML = `<b>${val.toLocaleString()} KG</b> / Limit: ${limit.toLocaleString()} <span class="${status}">(${val <= limit ? 'OK' : 'OVER'})</span>`;
+}
+
+function resetOutput() {
+    ['zfw', 'tow', 'lw'].forEach(id => document.getElementById(id).innerText = '-');
+}
+</script>
+
+</body>
+</html>
