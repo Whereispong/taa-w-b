@@ -1,0 +1,9 @@
+{
+  "name": "TAA Weight Balance",
+  "short_name": "TAA W&B",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#e11b22",
+  "theme_color": "#e11b22",
+  "icons": [{ "src": "https://via.placeholder.com/512/e11b22/ffffff?text=TAA", "sizes": "512x512", "type": "image/png" }]
+}
