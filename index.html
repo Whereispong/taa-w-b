@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="TAA W&B">
+<meta name="theme-color" content="#007aff">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon.png">
+<title>TAA W&B</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f2f2f7;color:#1c1c1e;min-height:100vh}
+.app{max-width:430px;margin:0 auto;padding:0 0 40px}
+.hdr{background:#fff;padding:16px 20px 12px;border-bottom:1px solid #e5e5ea;position:sticky;top:0;z-index:10}
+.hdr-title{font-size:20px;font-weight:700;color:#1c1c1e;letter-spacing:-.3px}
+.hdr-sub{font-size:13px;color:#8e8e93;margin-top:2px}
+.type-wrap{padding:14px 16px 0}
+.type-seg{display:flex;background:#e5e5ea;border-radius:11px;padding:3px}
+.tbtn{flex:1;height:36px;border:none;border-radius:9px;background:transparent;color:#636366;font-size:15px;font-weight:500;cursor:pointer;transition:all .2s}
+.tbtn.on{background:#fff;color:#1c1c1e;font-weight:600;box-shadow:0 1px 4px rgba(0,0,0,.15)}
+.card{background:#fff;border-radius:16px;margin:12px 16px 0;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+.card-hdr{padding:14px 16px 0;font-size:12px;font-weight:600;color:#8e8e93;text-transform:uppercase;letter-spacing:.06em}
+.frow{display:flex;align-items:center;padding:0 16px;min-height:52px;border-bottom:1px solid #f2f2f7}
+.frow:last-child{border-bottom:none}
+.flabel{font-size:15px;color:#1c1c1e;flex:1;font-weight:400}
+.fvalue{display:flex;align-items:center;gap:6px}
+.fvalue input,.fvalue select{border:none;outline:none;background:transparent;font-size:15px;color:#007aff;font-weight:500;text-align:right;min-width:0;font-family:inherit;-webkit-appearance:none}
+.fvalue select{color:#1c1c1e;font-weight:400;padding-right:20px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%238e8e93' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 0 center;cursor:pointer}
+.funit{font-size:14px;color:#8e8e93}
+.fvalue input[readonly]{color:#8e8e93;font-weight:400}
+.fvalue input::placeholder{color:#c7c7cc;font-weight:400}
+.pax-input{font-size:17px;color:#007aff;font-weight:500;border:none;outline:none;background:transparent;font-family:inherit;text-align:right;width:120px}
+.pax-hint{font-size:12px;color:#c7c7cc;padding:0 16px 10px;font-style:italic;line-height:1.4}
+.cta-wrap{padding:16px 16px 0}
+.cta{width:100%;height:54px;border:none;border-radius:14px;background:#007aff;color:#fff;font-size:17px;font-weight:600;cursor:pointer;transition:all .15s}
+.cta:active{transform:scale(.98);opacity:.9}
+.results{display:none}
+.wgrid{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:#e5e5ea;border-radius:0 0 16px 16px;overflow:hidden}
+.wbox{background:#fff;padding:14px 16px}
+.wbox.exceed{background:#fff8f8}
+.wlabel{font-size:12px;color:#8e8e93;font-weight:500;margin-bottom:1px}
+.wcode{font-size:10px;color:#c7c7cc;margin-bottom:6px}
+.wval{font-size:24px;font-weight:700;color:#1c1c1e;letter-spacing:-.5px;line-height:1}
+.wval.exceed{color:#c0392b}
+.wunit{font-size:12px;color:#8e8e93;margin-top:2px}
+.wmargin{font-size:12px;font-weight:600;margin-top:4px}
+.wmargin.ok{color:#1a7f2e}
+.wmargin.exceed{color:#c0392b}
+.brow{display:flex;justify-content:space-between;align-items:center;padding:10px 16px;border-bottom:1px solid #f2f2f7;font-size:14px}
+.brow:last-child{border-bottom:none}
+.blbl{color:#636366}
+.bval{font-weight:500;color:#1c1c1e;font-variant-numeric:tabular-nums}
+.brow.tot{background:#f9f9f9}
+.brow.tot .blbl{font-weight:600;color:#1c1c1e;font-size:15px}
+.brow.tot .bval{font-weight:700;font-size:15px}
+.reset-wrap{padding:12px 16px 0;text-align:center}
+.reset-btn{background:none;border:none;color:#ff3b30;font-size:15px;cursor:pointer;padding:8px 20px}
+.offline-banner{display:none;background:#ff9500;color:#fff;text-align:center;padding:8px;font-size:13px;font-weight:500}
+</style>
+</head>
+<body>
+<div class="offline-banner" id="offlineBanner">You are offline — app still works</div>
+<div class="app">
+<div class="hdr">
+  <div class="hdr-title">W&amp;B Calculator</div>
+  <div class="hdr-sub">Thai AirAsia — Rev. 224</div>
+</div>
+<div class="type-wrap">
+  <div class="type-seg">
+    <button class="tbtn on" id="b320" onclick="setType('A320')">A320</button>
+    <button class="tbtn" id="b321" onclick="setType('A321')">A321</button>
+  </div>
+</div>
+<div class="card">
+  <div class="card-hdr">Aircraft</div>
+  <div class="frow"><div class="flabel">Registration</div><div class="fvalue"><select id="acReg" onchange="onReg()"></select></div></div>
+  <div class="frow"><div class="flabel">Flight type</div><div class="fvalue"><select id="ftype" onchange="updatePaxHint()"><option value="dom">Domestic</option><option value="intl">International</option></select></div></div>
+  <div class="frow"><div class="flabel">DOW</div><div class="fvalue"><input id="dow" readonly style="width:80px"><span class="funit">kg</span></div></div>
+  <div class="frow"><div class="flabel">DOI</div><div class="fvalue"><input id="doi" readonly style="width:90px"><span class="funit">IU / %MAC</span></div></div>
+</div>
+<div class="card">
+  <div class="card-hdr">Passengers</div>
+  <div class="frow"><div class="flabel">Adult / Child / Infant</div><div class="fvalue"><input class="pax-input" id="paxInput" type="text" inputmode="text" placeholder="e.g. 168/7/1" autocomplete="off" autocorrect="off" spellcheck="false"></div></div>
+  <div class="pax-hint" id="paxHint"></div>
+</div>
+<div class="card">
+  <div class="card-hdr">Payload</div>
+  <div class="frow"><div class="flabel">Baggage</div><div class="fvalue"><input type="number" id="bag" inputmode="decimal" placeholder="—" style="width:80px"><span class="funit">kg</span></div></div>
+  <div class="frow"><div class="flabel">Cargo</div><div class="fvalue"><input type="number" id="cgo" inputmode="decimal" placeholder="—" style="width:80px"><span class="funit">kg</span></div></div>
+</div>
+<div class="card">
+  <div class="card-hdr">Fuel</div>
+  <div class="frow"><div class="flabel">Block fuel</div><div class="fvalue"><input type="number" id="fblock" inputmode="decimal" placeholder="—" style="width:80px" oninput="calcTOF()"><span class="funit">kg</span></div></div>
+  <div class="frow"><div class="flabel">Taxi fuel</div><div class="fvalue"><input type="number" id="ftaxi" inputmode="decimal" placeholder="168" style="width:80px" oninput="calcTOF()"><span class="funit">kg</span></div></div>
+  <div class="frow"><div class="flabel">Take-off fuel</div><div class="fvalue"><input type="number" id="ftof" inputmode="decimal" placeholder="—" style="width:80px"><span class="funit">kg</span></div></div>
+  <div class="frow"><div class="flabel">Trip fuel</div><div class="fvalue"><input type="number" id="ftrip" inputmode="decimal" placeholder="—" style="width:80px"><span class="funit">kg</span></div></div>
+</div>
+<div class="cta-wrap"><button class="cta" onclick="calc()">Calculate</button></div>
+<div class="results" id="res">
+<div class="card" style="margin-top:20px">
+  <div class="card-hdr" style="padding-bottom:14px">Results</div>
+  <div class="wgrid">
+    <div class="wbox" id="box-zfw"><div class="wlabel">Zero Fuel</div><div class="wcode">ZFW</div><div class="wval" id="rZFW">—</div><div class="wunit">kg</div><div class="wmargin" id="mZFW"></div></div>
+    <div class="wbox" id="box-txw"><div class="wlabel">Ramp</div><div class="wcode">TXW</div><div class="wval" id="rTXW">—</div><div class="wunit">kg</div><div class="wmargin" id="mTXW"></div></div>
+    <div class="wbox" id="box-tow"><div class="wlabel">Take-off</div><div class="wcode">TOW</div><div class="wval" id="rTOW">—</div><div class="wunit">kg</div><div class="wmargin" id="mTOW"></div></div>
+    <div class="wbox" id="box-lw"><div class="wlabel">Landing</div><div class="wcode">LW</div><div class="wval" id="rLW">—</div><div class="wunit">kg</div><div class="wmargin" id="mLW"></div></div>
+  </div>
+</div>
+<div class="card"><div class="card-hdr" style="padding-bottom:10px">Breakdown</div><div id="brkBody"></div></div>
+<div class="reset-wrap"><button class="reset-btn" onclick="resetAll()">Reset</button></div>
+</div>
+</div>
+<script>
+if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js');}
+window.addEventListener('online',()=>document.getElementById('offlineBanner').style.display='none');
+window.addEventListener('offline',()=>document.getElementById('offlineBanner').style.display='block');
+
+const A320=[{r:"HS-ABA",dow:42535,doi:"53 / 26.7",mtow:73500,mlw:66000,mzfw:62500,mtxi:73900},{r:"HS-ABB",dow:42519,doi:"52 / 26.2",mtow:73500,mlw:66000,mzfw:62500,mtxi:73900},{r:"HS-ABC",dow:42548,doi:"54 / 27.4",mtow:73500,mlw:66000,mzfw:62500,mtxi:73900},{r:"HS-ABD",dow:42290,doi:"49 / 24.6",mtow:73500,mlw:66000,mzfw:62500,mtxi:73900},{r:"HS-ABE",dow:42650,doi:"53 / 26.6",mtow:73500,mlw:66000,mzfw:62500,mtxi:73900},{r:"HS-ABF",dow:42394,doi:"50 / 25.2",mtow:73500,mlw:66000,mzfw:62500,mtxi:73900},{r:"HS-ABG",dow:42165,doi:"53 / 26.7",mtow:73500,mlw:66000,mzfw:62500,mtxi:73900},{r:"HS-ABH",dow:42593,doi:"53 / 26.6",mtow:73500,mlw:66000,mzfw:62500,mtxi:73900},{r:"HS-ABI",dow:42406,doi:"52 / 25.9",mtow:73500,mlw:66000,mzfw:62500,mtxi:73900},{r:"HS-ABJ",dow:42476,doi:"53 / 26.9",mtow:73500,mlw:66000,mzfw:62500,mtxi:73900},{r:"HS-ABK",dow:42645,doi:"53 / 26.7",mtow:73500,mlw:66000,mzfw:62500,mtxi:73900},{r:"HS-ABL",dow:42512,doi:"53 / 26.6",mtow:73500,mlw:66000,mzfw:62500,mtxi:73900},{r:"HS-ABM",dow:42540,doi:"54 / 27.2",mtow:73500,mlw:66000,mzfw:62500,mtxi:73900},{r:"HS-ABN",dow:42430,doi:"53 / 26.8",mtow:73500,mlw:66000,mzfw:62500,mtxi:73900},{r:"HS-ABO",dow:42607,doi:"54 / 27.2",mtow:73500,mlw:66000,mzfw:62500,mtxi:73900},{r:"HS-ABP",dow:42383,doi:"53 / 26.6",mtow:73500,mlw:66000,mzfw:62500,mtxi:73900},{r:"HS-ABQ",dow:42542,doi:"53 / 26.7",mtow:73500,mlw:66000,mzfw:62500,mtxi:73900},{r:"HS-ABR",dow:42046,doi:"53 / 26.8",mtow:73500,mlw:66000,mzfw:62500,mtxi:73900},{r:"HS-ABS",dow:42271,doi:"53 / 26.7",mtow:73500,mlw:66000,mzfw:62500,mtxi:73900},{r:"HS-ABT",dow:42372,doi:"53 / 26.5",mtow:75500,mlw:66000,mzfw:62500,mtxi:75900},{r:"HS-ABU",dow:42356,doi:"52 / 26.3",mtow:75500,mlw:66000,mzfw:62500,mtxi:75900},{r:"HS-ABV",dow:42451,doi:"52 / 26.4",mtow:75500,mlw:66000,mzfw:62500,mtxi:75900},{r:"HS-ABW",dow:42677,doi:"53 / 26.8",mtow:75500,mlw:66000,mzfw:62500,mtxi:75900},{r:"HS-ABX",dow:43114,doi:"52 / 26.1",mtow:75500,mlw:66000,mzfw:62500,mtxi:75900},{r:"HS-ABY",dow:43232,doi:"53 / 26.7",mtow:75500,mlw:66000,mzfw:62500,mtxi:75900},{r:"HS-ABZ",dow:42820,doi:"54 / 27.1",mtow:75500,mlw:66000,mzfw:62500,mtxi:75900},{r:"HS-BBA",dow:42621,doi:"54 / 27.3",mtow:75500,mlw:66000,mzfw:62500,mtxi:75900},{r:"HS-BBB",dow:42530,doi:"53 / 26.5",mtow:75500,mlw:66000,mzfw:62500,mtxi:75900},{r:"HS-BBC",dow:42874,doi:"56 / 28.4",mtow:75500,mlw:66000,mzfw:62500,mtxi:75900},{r:"HS-BBD",dow:42792,doi:"55 / 27.8",mtow:75500,mlw:66000,mzfw:62500,mtxi:75900},{r:"HS-BBE",dow:42582,doi:"56 / 28.3",mtow:75500,mlw:66000,mzfw:62500,mtxi:75900},{r:"HS-BBF",dow:42764,doi:"55 / 27.6",mtow:75500,mlw:66000,mzfw:62500,mtxi:75900},{r:"HS-BBG",dow:42729,doi:"55 / 27.8",mtow:75500,mlw:66000,mzfw:62500,mtxi:75900},{r:"HS-BBH",dow:42759,doi:"56 / 28.1",mtow:75500,mlw:66000,mzfw:62500,mtxi:75900},{r:"HS-BBI",dow:42592,doi:"54 / 27.3",mtow:75500,mlw:66000,mzfw:62500,mtxi:75900},{r:"HS-BBJ",dow:42599,doi:"54 / 27.5",mtow:75500,mlw:66000,mzfw:62500,mtxi:75900},{r:"HS-BBL",dow:42915,doi:"56 / 28.2",mtow:75500,mlw:66000,mzfw:62500,mtxi:75900},{r:"HS-BBM",dow:42549,doi:"51 / 25.6",mtow:75500,mlw:66000,mzfw:62500,mtxi:75900},{r:"HS-BBN",dow:42562,doi:"55 / 27.6",mtow:75500,mlw:66000,mzfw:62500,mtxi:75900},{r:"HS-BBO",dow:42299,doi:"55 / 27.6",mtow:75500,mlw:66000,mzfw:62500,mtxi:75900},{r:"HS-BBP",dow:42415,doi:"54 / 27.4",mtow:75500,mlw:66000,mzfw:62500,mtxi:75900},{r:"HS-BBQ",dow:42680,doi:"54 / 27.4",mtow:75500,mlw:66000,mzfw:62500,mtxi:75900},{r:"HS-BBR",dow:42089,doi:"54 / 27.2",mtow:75500,mlw:66000,mzfw:62500,mtxi:75900},{r:"HS-BBS",dow:42645,doi:"53 / 26.4",mtow:73500,mlw:66000,mzfw:62500,mtxi:73900},{r:"HS-BBT",dow:42740,doi:"53 / 26.7",mtow:75500,mlw:66000,mzfw:62500,mtxi:75900},{r:"HS-BBU",dow:42501,doi:"55 / 27.8",mtow:75500,mlw:66000,mzfw:62500,mtxi:75900},{r:"HS-BBV",dow:42549,doi:"54 / 27.2",mtow:75500,mlw:66000,mzfw:62500,mtxi:75900},{r:"HS-BBW",dow:42387,doi:"54 / 27.5",mtow:75500,mlw:66000,mzfw:62500,mtxi:75900},{r:"HS-BBX",dow:44801,doi:"55 / 27.6",mtow:75500,mlw:67400,mzfw:64300,mtxi:75900},{r:"HS-BBY",dow:44742,doi:"53 / 26.8",mtow:75500,mlw:67400,mzfw:64300,mtxi:75900},{r:"HS-BBZ",dow:44737,doi:"53 / 26.7",mtow:75500,mlw:67400,mzfw:64300,mtxi:75900},{r:"HS-CBA",dow:42282,doi:"54 / 27.4",mtow:75500,mlw:66000,mzfw:62500,mtxi:75900},{r:"HS-CBB",dow:44414,doi:"54 / 27.3",mtow:75500,mlw:67400,mzfw:64300,mtxi:75900},{r:"HS-CBC",dow:44804,doi:"54 / 27.0",mtow:75500,mlw:67400,mzfw:64300,mtxi:75900},{r:"HS-CBD",dow:42645,doi:"53 / 26.5",mtow:75500,mlw:66000,mzfw:62500,mtxi:75900},{r:"HS-CBE",dow:44699,doi:"54 / 26.9",mtow:75500,mlw:67400,mzfw:64300,mtxi:75900},{r:"HS-CBF",dow:44287,doi:"54 / 27.4",mtow:75500,mlw:67400,mzfw:64300,mtxi:75900},{r:"HS-CBG",dow:44205,doi:"54 / 27.0",mtow:75500,mlw:67400,mzfw:64300,mtxi:75900},{r:"HS-CBH",dow:44582,doi:"54 / 26.9",mtow:75500,mlw:67400,mzfw:64300,mtxi:75900},{r:"HS-CBI",dow:42775,doi:"57 / 29.1",mtow:75500,mlw:66000,mzfw:62500,mtxi:75900},{r:"HS-CBJ",dow:44359,doi:"54 / 27.0",mtow:75500,mlw:67400,mzfw:64300,mtxi:75900},{r:"HS-CBK",dow:44143,doi:"54 / 27.0",mtow:75500,mlw:67400,mzfw:64300,mtxi:75900},{r:"HS-CBL",dow:42682,doi:"53 / 26.8",mtow:77000,mlw:64500,mzfw:61000,mtxi:77400},{r:"HS-CBM",dow:42042,doi:"53 / 26.9",mtow:75500,mlw:66000,mzfw:62500,mtxi:75900},{r:"HS-CBR",dow:42571,doi:"53 / 26.6",mtow:75500,mlw:66000,mzfw:62500,mtxi:75900}];
+const A321=[{r:"HS-EAA",dow:50012,doi:"45 / 22.6",mtow:93500,mlw:79200,mzfw:75600,mtxi:93900},{r:"HS-EAB",dow:50310,doi:"45 / 22.9",mtow:93500,mlw:79200,mzfw:75600,mtxi:93900},{r:"HS-EAC",dow:50306,doi:"46 / 22.9",mtow:93500,mlw:79200,mzfw:75600,mtxi:93900},{r:"HS-EAD",dow:50268,doi:"45 / 22.8",mtow:93500,mlw:79200,mzfw:75600,mtxi:93900},{r:"HS-EAE",dow:49982,doi:"42 / 21.4",mtow:93500,mlw:79200,mzfw:75600,mtxi:93900},{r:"HS-EAF",dow:49960,doi:"42 / 21.4",mtow:93500,mlw:79200,mzfw:75600,mtxi:93900},{r:"HS-EAG",dow:49972,doi:"42 / 21.4",mtow:93500,mlw:79200,mzfw:75600,mtxi:93900}];
+let data=A320;
+function setType(t){data=t==='A320'?A320:A321;document.getElementById('b320').className='tbtn'+(t==='A320'?' on':'');document.getElementById('b321').className='tbtn'+(t==='A321'?' on':'');populateReg();document.getElementById('res').style.display='none';}
+function populateReg(){const s=document.getElementById('acReg');s.innerHTML=data.map(a=>`<option value="${a.r}">${a.r}</option>`).join('');onReg();}
+function onReg(){const ac=data.find(a=>a.r===document.getElementById('acReg').value);if(!ac)return;document.getElementById('dow').value=ac.dow.toLocaleString();document.getElementById('doi').value=ac.doi;}
+function parsePax(){const raw=document.getElementById('paxInput').value.trim();if(!raw)return{nA:0,nC:0,nI:0};const p=raw.split('/');return{nA:parseInt(p[0])||0,nC:parseInt(p[1])||0,nI:parseInt(p[2])||0};}
+function updatePaxHint(){const{nA,nC,nI}=parsePax();const aw=document.getElementById('ftype').value==='dom'?72:74;if(nA||nC||nI){const wt=nA*aw+nC*40+nI*10;document.getElementById('paxHint').textContent=`${nA} adults × ${aw} kg + ${nC} ch × 40 kg + ${nI} inf × 10 kg = ${wt.toLocaleString()} kg (${nA+nC+nI} souls)`;}else{document.getElementById('paxHint').textContent='';}}
+document.getElementById('paxInput').addEventListener('input',updatePaxHint);
+function calcTOF(){const b=parseFloat(document.getElementById('fblock').value);const t=parseFloat(document.getElementById('ftaxi').value)||168;if(!isNaN(b))document.getElementById('ftof').value=Math.max(0,b-t);}
+function fmt(n){return Math.round(n).toLocaleString();}
+function setBox(id,val,max){const ok=val<=max;const mg=max-val;document.getElementById('r'+id).textContent=fmt(val);document.getElementById('r'+id).className='wval'+(ok?'':' exceed');document.getElementById('m'+id).textContent=ok?('+ '+fmt(mg)+' kg margin'):('EXCEED '+fmt(Math.abs(mg))+' kg');document.getElementById('m'+id).className='wmargin '+(ok?'ok':'exceed');document.getElementById('box-'+id.toLowerCase()).className='wbox'+(ok?'':' exceed');}
+function calc(){const ac=data.find(a=>a.r===document.getElementById('acReg').value);if(!ac)return;const aw=document.getElementById('ftype').value==='dom'?72:74;const{nA,nC,nI}=parsePax();const bag=parseFloat(document.getElementById('bag').value)||0;const cgo=parseFloat(document.getElementById('cgo').value)||0;const fblock=parseFloat(document.getElementById('fblock').value)||0;const ftaxi=parseFloat(document.getElementById('ftaxi').value)||168;const ftof=parseFloat(document.getElementById('ftof').value)||0;const ftrip=parseFloat(document.getElementById('ftrip').value)||0;const wA=nA*aw,wC=nC*40,wI=nI*10;const zfw=ac.dow+wA+wC+wI+bag+cgo;const tow=zfw+ftof;const txw=zfw+fblock;const lw=tow-ftrip;setBox('ZFW',zfw,ac.mzfw);setBox('TXW',txw,ac.mtxi);setBox('TOW',tow,ac.mtow);setBox('LW',lw,ac.mlw);const rows=[];rows.push({l:'DOW',v:fmt(ac.dow)+' kg',t:false});if(nA)rows.push({l:`Adults ${nA} × ${aw} kg`,v:fmt(wA)+' kg',t:false});if(nC)rows.push({l:`Children ${nC} × 40 kg`,v:fmt(wC)+' kg',t:false});if(nI)rows.push({l:`Infants ${nI} × 10 kg`,v:fmt(wI)+' kg',t:false});if(bag)rows.push({l:'Baggage',v:fmt(bag)+' kg',t:false});if(cgo)rows.push({l:'Cargo',v:fmt(cgo)+' kg',t:false});rows.push({l:'ZFW',v:fmt(zfw)+' kg',t:true});if(ftof)rows.push({l:'+ Take-off fuel',v:fmt(ftof)+' kg',t:false});rows.push({l:'TOW',v:fmt(tow)+' kg',t:true});if(ftaxi)rows.push({l:'+ Taxi fuel',v:fmt(ftaxi)+' kg',t:false});rows.push({l:'Ramp (TXW)',v:fmt(txw)+' kg',t:true});if(ftrip)rows.push({l:'− Trip fuel',v:fmt(ftrip)+' kg',t:false});rows.push({l:'Landing (LW)',v:fmt(lw)+' kg',t:true});document.getElementById('brkBody').innerHTML=rows.map(r=>`<div class="brow${r.t?' tot':''}"><span class="blbl">${r.l}</span><span class="bval">${r.v}</span></div>`).join('');document.getElementById('res').style.display='block';setTimeout(()=>document.getElementById('res').scrollIntoView({behavior:'smooth'}),100);}
+function resetAll(){document.getElementById('paxInput').value='';document.getElementById('paxHint').textContent='';['bag','cgo','fblock','ftaxi','ftof','ftrip'].forEach(id=>{document.getElementById(id).value='';});document.getElementById('res').style.display='none';window.scrollTo({top:0,behavior:'smooth'});}
+populateReg();
+</script>
+</body>
+</html>
